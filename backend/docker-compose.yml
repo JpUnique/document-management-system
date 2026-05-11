@@ -1,0 +1,54 @@
+version: '3.9'
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: dms-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${DB_NAME:-dms_db}
+      POSTGRES_USER: ${DB_USER:-dms_user}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-dms_password}
+    volumes:
+      - dms_pgdata:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-dms_user} -d ${DB_NAME:-dms_db}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build: .
+    container_name: dms-backend
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      NODE_ENV: production
+      PORT: 4000
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: ${DB_NAME:-dms_db}
+      DB_USER: ${DB_USER:-dms_user}
+      DB_PASSWORD: ${DB_PASSWORD:-dms_password}
+      JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET:-change-me-access-secret-min-32-chars}
+      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET:-change-me-refresh-secret-min-32-chars}
+      JWT_ACCESS_EXPIRES_IN: 15m
+      JWT_REFRESH_EXPIRES_IN: 7d
+      UPLOAD_DIR: /app/uploads
+      MAX_FILE_SIZE_MB: 100
+      CORS_ORIGIN: ${CORS_ORIGIN:-http://localhost:5173,http://localhost:3000}
+      ADMIN_EMAIL: ${ADMIN_EMAIL:-admin@docmanager.com}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-PdAdmin}
+      ADMIN_NAME: ${ADMIN_NAME:-System Administrator}
+    ports:
+      - "4000:4000"
+    volumes:
+      - dms_uploads:/app/uploads
+
+volumes:
+  dms_pgdata:
+  dms_uploads:

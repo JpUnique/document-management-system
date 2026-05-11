@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Activity Checker - DMS</title>
+    <style>
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            max-width: 800px;
+            margin: 40px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            margin-bottom: 20px;
+        }
+        .section {
+            margin: 20px 0;
+            padding: 15px;
+            background: #f9f9f9;
+            border-radius: 4px;
+            border-left: 4px solid #3b82f6;
+        }
+        .section h2 {
+            margin-top: 0;
+            color: #3b82f6;
+        }
+        pre {
+            background: #1e1e1e;
+            color: #d4d4d4;
+            padding: 15px;
+            border-radius: 4px;
+            overflow-x: auto;
+            font-size: 12px;
+        }
+        button {
+            background: #3b82f6;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background: #2563eb;
+        }
+        .warning {
+            background: #fef3c7;
+            border-left-color: #f59e0b;
+            color: #92400e;
+        }
+        .success {
+            background: #d1fae5;
+            border-left-color: #10b981;
+            color: #065f46;
+        }
+        .error {
+            background: #fee2e2;
+            border-left-color: #ef4444;
+            color: #991b1b;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 Activity & Auth Checker</h1>
+        <p>This page helps diagnose activity tracking and authentication issues across browsers.</p>
+        
+        <div class="section">
+            <h2>📊 Activity Data</h2>
+            <div id="activityStatus"></div>
+            <pre id="activityData"></pre>
+        </div>
+
+        <div class="section">
+            <h2>🔐 Authentication Data</h2>
+            <div id="authStatus"></div>
+            <pre id="authData"></pre>
+        </div>
+
+        <div class="section">
+            <h2>📄 Documents Data</h2>
+            <div id="docsStatus"></div>
+            <pre id="docsData"></pre>
+        </div>
+
+        <div class="section">
+            <h2>👥 Users Data</h2>
+            <div id="usersStatus"></div>
+            <pre id="usersData"></pre>
+        </div>
+
+        <div class="section">
+            <h2>🛠️ Actions</h2>
+            <button onclick="refreshData()">🔄 Refresh Data</button>
+            <button onclick="clearAllData()">🗑️ Clear All Data</button>
+            <button onclick="addTestActivity()">➕ Add Test Activity</button>
+            <button onclick="window.location.href='/'">🏠 Go to App</button>
+        </div>
+    </div>
+
+    <script>
+        function formatJSON(data) {
+            try {
+                return JSON.stringify(JSON.parse(data), null, 2);
+            } catch (e) {
+                return data || 'null';
+            }
+        }
+
+        function checkData() {
+            // Check activities
+            const activities = localStorage.getItem('docmanager_activities');
+            const activityCount = activities ? JSON.parse(activities).length : 0;
+            
+            document.getElementById('activityStatus').innerHTML = activities 
+                ? `<div class="success">✅ Found ${activityCount} activities</div>`
+                : '<div class="warning">⚠️ No activities found</div>';
+            document.getElementById('activityData').textContent = formatJSON(activities);
+
+            // Check auth
+            const auth = localStorage.getItem('docmanager_auth');
+            document.getElementById('authStatus').innerHTML = auth 
+                ? '<div class="success">✅ User logged in</div>'
+                : '<div class="error">❌ No user logged in</div>';
+            document.getElementById('authData').textContent = formatJSON(auth);
+
+            // Check documents
+            const docs = localStorage.getItem('docmanager_documents');
+            const docCount = docs ? JSON.parse(docs).length : 0;
+            document.getElementById('docsStatus').innerHTML = docs 
+                ? `<div class="success">✅ Found ${docCount} documents</div>`
+                : '<div class="warning">⚠️ No documents found</div>';
+            document.getElementById('docsData').textContent = formatJSON(docs);
+
+            // Check users
+            const users = localStorage.getItem('docmanager_users');
+            const userCount = users ? JSON.parse(users).length : 0;
+            document.getElementById('usersStatus').innerHTML = users 
+                ? `<div class="success">✅ Found ${userCount} users</div>`
+                : '<div class="warning">⚠️ No users found</div>';
+            document.getElementById('usersData').textContent = formatJSON(users);
+        }
+
+        function refreshData() {
+            checkData();
+            alert('Data refreshed!');
+        }
+
+        function clearAllData() {
+            if (confirm('Are you sure you want to clear ALL data? This cannot be undone!')) {
+                localStorage.clear();
+                alert('All data cleared!');
+                checkData();
+            }
+        }
+
+        function addTestActivity() {
+            const activities = JSON.parse(localStorage.getItem('docmanager_activities') || '[]');
+            const testActivity = {
+                id: `activity-${Date.now()}-test`,
+                type: 'upload',
+                documentId: 'test-doc-1',
+                documentName: 'Test Document.pdf',
+                userId: 'admin-1',
+                userName: 'Admin',
+                timestamp: new Date().toISOString(),
+                details: 'Test activity added manually'
+            };
+            activities.unshift(testActivity);
+            localStorage.setItem('docmanager_activities', JSON.stringify(activities));
+            alert('Test activity added!');
+            checkData();
+        }
+
+        // Check data on page load
+        checkData();
+    </script>
+</body>
+</html>

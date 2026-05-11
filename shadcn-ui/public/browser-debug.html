@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Browser Debug - DocManager</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        h1 { color: #333; margin-top: 0; }
+        h2 { color: #666; border-bottom: 2px solid #e0e0e0; padding-bottom: 10px; }
+        .info-grid {
+            display: grid;
+            grid-template-columns: 200px 1fr;
+            gap: 10px;
+            margin: 10px 0;
+        }
+        .label { font-weight: bold; color: #555; }
+        .value { color: #333; word-break: break-all; }
+        .status { padding: 4px 8px; border-radius: 4px; display: inline-block; }
+        .status.success { background: #d4edda; color: #155724; }
+        .status.error { background: #f8d7da; color: #721c24; }
+        .status.warning { background: #fff3cd; color: #856404; }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover { background: #0056b3; }
+        button.danger { background: #dc3545; }
+        button.danger:hover { background: #c82333; }
+        pre {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 4px;
+            overflow-x: auto;
+            font-size: 12px;
+        }
+        .test-result {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+            border-left: 4px solid;
+        }
+        .test-result.pass {
+            background: #d4edda;
+            border-color: #28a745;
+        }
+        .test-result.fail {
+            background: #f8d7da;
+            border-color: #dc3545;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 Browser Debug Tool - DocManager</h1>
+        <p>This tool helps diagnose browser-specific issues with localStorage and authentication.</p>
+    </div>
+
+    <div class="container">
+        <h2>Browser Information</h2>
+        <div class="info-grid">
+            <div class="label">User Agent:</div>
+            <div class="value" id="userAgent"></div>
+            
+            <div class="label">Browser:</div>
+            <div class="value" id="browserName"></div>
+            
+            <div class="label">Platform:</div>
+            <div class="value" id="platform"></div>
+            
+            <div class="label">Cookies Enabled:</div>
+            <div class="value" id="cookiesEnabled"></div>
+            
+            <div class="label">localStorage Available:</div>
+            <div class="value" id="localStorageAvailable"></div>
+            
+            <div class="label">sessionStorage Available:</div>
+            <div class="value" id="sessionStorageAvailable"></div>
+        </div>
+    </div>
+
+    <div class="container">
+        <h2>localStorage Status</h2>
+        <div id="storageStatus"></div>
+        <div id="storageKeys"></div>
+    </div>
+
+    <div class="container">
+        <h2>Authentication Data</h2>
+        <div id="authData"></div>
+    </div>
+
+    <div class="container">
+        <h2>Quick Actions</h2>
+        <button onclick="initializeAdmin()">Initialize Admin User</button>
+        <button onclick="testLogin()">Test Login</button>
+        <button onclick="clearAllStorage()" class="danger">Clear All Storage</button>
+        <button onclick="exportData()">Export Data</button>
+        <button onclick="location.reload()">Refresh Page</button>
+    </div>
+
+    <div class="container">
+        <h2>Test Results</h2>
+        <div id="testResults"></div>
+    </div>
+
+    <script>
+        // Detect browser
+        function getBrowserInfo() {
+            const ua = navigator.userAgent;
+            let browserName = 'Unknown';
+            
+            if (ua.indexOf('Firefox') > -1) browserName = 'Firefox';
+            else if (ua.indexOf('Chrome') > -1) browserName = 'Chrome';
+            else if (ua.indexOf('Safari') > -1) browserName = 'Safari';
+            else if (ua.indexOf('Edge') > -1) browserName = 'Edge';
+            else if (ua.indexOf('Opera') > -1) browserName = 'Opera';
+            
+            return browserName;
+        }
+
+        // Check localStorage availability
+        function checkLocalStorage() {
+            try {
+                const test = '__storage_test__';
+                localStorage.setItem(test, test);
+                localStorage.removeItem(test);
+                return true;
+            } catch (e) {
+                return false;
+            }
+        }
+
+        // Display browser info
+        function displayBrowserInfo() {
+            document.getElementById('userAgent').textContent = navigator.userAgent;
+            document.getElementById('browserName').textContent = getBrowserInfo();
+            document.getElementById('platform').textContent = navigator.platform;
+            document.getElementById('cookiesEnabled').innerHTML = 
+                navigator.cookieEnabled ? 
+                '<span class="status success">✓ Enabled</span>' : 
+                '<span class="status error">✗ Disabled</span>';
+            
+            const localStorageOk = checkLocalStorage();
+            document.getElementById('localStorageAvailable').innerHTML = 
+                localStorageOk ? 
+                '<span class="status success">✓ Available</span>' : 
+                '<span class="status error">✗ Not Available</span>';
+            
+            try {
+                sessionStorage.setItem('test', 'test');
+                sessionStorage.removeItem('test');
+                document.getElementById('sessionStorageAvailable').innerHTML = 
+                    '<span class="status success">✓ Available</span>';
+            } catch (e) {
+                document.getElementById('sessionStorageAvailable').innerHTML = 
+                    '<span class="status error">✗ Not Available</span>';
+            }
+        }
+
+        // Display storage status
+        function displayStorageStatus() {
+            const statusDiv = document.getElementById('storageStatus');
+            const keysDiv = document.getElementById('storageKeys');
+            
+            try {
+                const keys = Object.keys(localStorage);
+                const size = JSON.stringify(localStorage).length;
+                
+                statusDiv.innerHTML = `
+                    <div class="info-grid">
+                        <div class="label">Total Keys:</div>
+                        <div class="value">${keys.length}</div>
+                        <div class="label">Approximate Size:</div>
+                        <div class="value">${(size / 1024).toFixed(2)} KB</div>
+                    </div>
+                `;
+                
+                if (keys.length > 0) {
+                    keysDiv.innerHTML = '<h3>Stored Keys:</h3><pre>' + 
+                        keys.map(key => `${key}: ${localStorage.getItem(key)?.length || 0} chars`).join('\n') + 
+                        '</pre>';
+                } else {
+                    keysDiv.innerHTML = '<p class="status warning">No keys found in localStorage</p>';
+                }
+            } catch (e) {
+                statusDiv.innerHTML = '<p class="status error">Error accessing localStorage: ' + e.message + '</p>';
+            }
+        }
+
+        // Display auth data
+        function displayAuthData() {
+            const authDiv = document.getElementById('authData');
+            
+            try {
+                const currentUser = localStorage.getItem('docmanager_current_user');
+                const users = localStorage.getItem('docmanager_users');
+                
+                let html = '<h3>Current User:</h3>';
+                if (currentUser) {
+                    html += '<pre>' + JSON.stringify(JSON.parse(currentUser), null, 2) + '</pre>';
+                } else {
+                    html += '<p class="status warning">No current user logged in</p>';
+                }
+                
+                html += '<h3>All Users:</h3>';
+                if (users) {
+                    const userList = JSON.parse(users);
+                    html += '<pre>' + JSON.stringify(userList, null, 2) + '</pre>';
+                    html += `<p>Total users: ${userList.length}</p>`;
+                } else {
+                    html += '<p class="status warning">No users found</p>';
+                }
+                
+                authDiv.innerHTML = html;
+            } catch (e) {
+                authDiv.innerHTML = '<p class="status error">Error reading auth data: ' + e.message + '</p>';
+            }
+        }
+
+        // Initialize admin user
+        function initializeAdmin() {
+            const resultsDiv = document.getElementById('testResults');
+            
+            try {
+                const USERS_KEY = 'docmanager_users';
+                const adminUser = {
+                    id: 'admin-1',
+                    name: 'Admin',
+                    email: 'admin',
+                    password: 'PdAdmin',
+                    role: 'admin',
+                    createdAt: new Date().toISOString()
+                };
+                
+                const existingUsers = localStorage.getItem(USERS_KEY);
+                let users = existingUsers ? JSON.parse(existingUsers) : [];
+                
+                // Remove existing admin if any
+                users = users.filter(u => u.email !== 'admin');
+                
+                // Add admin
+                users.push(adminUser);
+                localStorage.setItem(USERS_KEY, JSON.stringify(users));
+                
+                resultsDiv.innerHTML = '<div class="test-result pass">✓ Admin user initialized successfully!<br>Username: admin<br>Password: PdAdmin</div>';
+                
+                displayStorageStatus();
+                displayAuthData();
+            } catch (e) {
+                resultsDiv.innerHTML = '<div class="test-result fail">✗ Failed to initialize admin: ' + e.message + '</div>';
+            }
+        }
+
+        // Test login
+        function testLogin() {
+            const resultsDiv = document.getElementById('testResults');
+            
+            try {
+                const users = JSON.parse(localStorage.getItem('docmanager_users') || '[]');
+                const adminUser = users.find(u => u.email === 'admin');
+                
+                if (!adminUser) {
+                    resultsDiv.innerHTML = '<div class="test-result fail">✗ Admin user not found. Click "Initialize Admin User" first.</div>';
+                    return;
+                }
+                
+                // Simulate login
+                if (adminUser.password === 'PdAdmin') {
+                    localStorage.setItem('docmanager_current_user', JSON.stringify(adminUser));
+                    resultsDiv.innerHTML = '<div class="test-result pass">✓ Login test successful!<br>You can now navigate to the main app.</div>';
+                    displayAuthData();
+                } else {
+                    resultsDiv.innerHTML = '<div class="test-result fail">✗ Password mismatch</div>';
+                }
+            } catch (e) {
+                resultsDiv.innerHTML = '<div class="test-result fail">✗ Login test failed: ' + e.message + '</div>';
+            }
+        }
+
+        // Clear all storage
+        function clearAllStorage() {
+            if (confirm('Are you sure you want to clear ALL localStorage data? This cannot be undone.')) {
+                try {
+                    localStorage.clear();
+                    document.getElementById('testResults').innerHTML = 
+                        '<div class="test-result pass">✓ All storage cleared. Refreshing page...</div>';
+                    setTimeout(() => location.reload(), 1500);
+                } catch (e) {
+                    document.getElementById('testResults').innerHTML = 
+                        '<div class="test-result fail">✗ Failed to clear storage: ' + e.message + '</div>';
+                }
+            }
+        }
+
+        // Export data
+        function exportData() {
+            try {
+                const data = {};
+                for (let i = 0; i < localStorage.length; i++) {
+                    const key = localStorage.key(i);
+                    data[key] = localStorage.getItem(key);
+                }
+                
+                const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `docmanager-backup-${new Date().toISOString()}.json`;
+                a.click();
+                
+                document.getElementById('testResults').innerHTML = 
+                    '<div class="test-result pass">✓ Data exported successfully!</div>';
+            } catch (e) {
+                document.getElementById('testResults').innerHTML = 
+                    '<div class="test-result fail">✗ Export failed: ' + e.message + '</div>';
+            }
+        }
+
+        // Initialize on load
+        window.onload = function() {
+            displayBrowserInfo();
+            displayStorageStatus();
+            displayAuthData();
+        };
+    </script>
+</body>
+</html>

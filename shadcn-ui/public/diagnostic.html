@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DocManager - Diagnostic Tool</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            border-bottom: 2px solid #4CAF50;
+            padding-bottom: 10px;
+        }
+        .section {
+            margin: 20px 0;
+            padding: 15px;
+            background: #f9f9f9;
+            border-left: 4px solid #4CAF50;
+        }
+        .user-card {
+            background: white;
+            padding: 15px;
+            margin: 10px 0;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        .label {
+            font-weight: bold;
+            color: #555;
+        }
+        .value {
+            color: #333;
+            margin-left: 10px;
+        }
+        .success {
+            color: #4CAF50;
+            font-weight: bold;
+        }
+        .error {
+            color: #f44336;
+            font-weight: bold;
+        }
+        button {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 5px;
+        }
+        button:hover {
+            background: #45a049;
+        }
+        .danger {
+            background: #f44336;
+        }
+        .danger:hover {
+            background: #da190b;
+        }
+        pre {
+            background: #f4f4f4;
+            padding: 15px;
+            border-radius: 4px;
+            overflow-x: auto;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 DocManager Diagnostic Tool</h1>
+        
+        <div class="section">
+            <h2>LocalStorage Status</h2>
+            <div id="storageStatus"></div>
+        </div>
+
+        <div class="section">
+            <h2>Registered Users</h2>
+            <div id="usersList"></div>
+        </div>
+
+        <div class="section">
+            <h2>Current Session</h2>
+            <div id="currentSession"></div>
+        </div>
+
+        <div class="section">
+            <h2>Actions</h2>
+            <button onclick="recreateAdmin()">🔄 Recreate Admin User</button>
+            <button onclick="clearStorage()" class="danger">🗑️ Clear All Data</button>
+            <button onclick="location.reload()">🔃 Refresh Page</button>
+        </div>
+
+        <div class="section">
+            <h2>Raw Data</h2>
+            <pre id="rawData"></pre>
+        </div>
+    </div>
+
+    <script>
+        const USERS_STORAGE_KEY = 'dms_users';
+        const STORAGE_KEY = 'dms_current_user';
+
+        function displayDiagnostics() {
+            // Check localStorage availability
+            const storageDiv = document.getElementById('storageStatus');
+            if (typeof localStorage !== 'undefined') {
+                storageDiv.innerHTML = '<span class="success">✓ LocalStorage is available</span>';
+            } else {
+                storageDiv.innerHTML = '<span class="error">✗ LocalStorage is NOT available</span>';
+                return;
+            }
+
+            // Display users
+            const usersStr = localStorage.getItem(USERS_STORAGE_KEY) || '[]';
+            const users = JSON.parse(usersStr);
+            const usersDiv = document.getElementById('usersList');
+            
+            if (users.length === 0) {
+                usersDiv.innerHTML = '<span class="error">No users found in storage!</span>';
+            } else {
+                usersDiv.innerHTML = `<p class="success">Found ${users.length} user(s):</p>`;
+                users.forEach((user, index) => {
+                    usersDiv.innerHTML += `
+                        <div class="user-card">
+                            <div><span class="label">User #${index + 1}</span></div>
+                            <div><span class="label">ID:</span><span class="value">${user.id}</span></div>
+                            <div><span class="label">Username:</span><span class="value">${user.email}</span></div>
+                            <div><span class="label">Password:</span><span class="value">${user.password}</span></div>
+                            <div><span class="label">Name:</span><span class="value">${user.name}</span></div>
+                            <div><span class="label">Role:</span><span class="value">${user.role}</span></div>
+                        </div>
+                    `;
+                });
+            }
+
+            // Display current session
+            const currentUserStr = localStorage.getItem(STORAGE_KEY);
+            const sessionDiv = document.getElementById('currentSession');
+            if (currentUserStr) {
+                const currentUser = JSON.parse(currentUserStr);
+                sessionDiv.innerHTML = `
+                    <span class="success">✓ User is logged in:</span>
+                    <div class="user-card">
+                        <div><span class="label">Username:</span><span class="value">${currentUser.email}</span></div>
+                        <div><span class="label">Name:</span><span class="value">${currentUser.name}</span></div>
+                        <div><span class="label">Role:</span><span class="value">${currentUser.role}</span></div>
+                    </div>
+                `;
+            } else {
+                sessionDiv.innerHTML = '<span class="error">✗ No active session</span>';
+            }
+
+            // Display raw data
+            const rawDiv = document.getElementById('rawData');
+            rawDiv.textContent = JSON.stringify({
+                users: users,
+                currentUser: currentUserStr ? JSON.parse(currentUserStr) : null
+            }, null, 2);
+        }
+
+        function recreateAdmin() {
+            const adminUser = {
+                id: '1',
+                email: 'admin',
+                password: 'PdAdmin',
+                name: 'Administrator',
+                role: 'admin',
+                permissions: ['read', 'write', 'delete', 'admin']
+            };
+
+            const usersStr = localStorage.getItem(USERS_STORAGE_KEY) || '[]';
+            let users = JSON.parse(usersStr);
+            
+            // Remove existing admin
+            users = users.filter(u => u.id !== '1');
+            
+            // Add new admin
+            users.unshift(adminUser);
+            
+            localStorage.setItem(USERS_STORAGE_KEY, JSON.stringify(users));
+            
+            alert('✓ Admin user recreated successfully!\n\nUsername: admin\nPassword: PdAdmin');
+            location.reload();
+        }
+
+        function clearStorage() {
+            if (confirm('Are you sure you want to clear all data? This will log you out and remove all users.')) {
+                localStorage.clear();
+                alert('✓ All data cleared!');
+                location.reload();
+            }
+        }
+
+        // Run diagnostics on page load
+        displayDiagnostics();
+    </script>
+</body>
+</html>

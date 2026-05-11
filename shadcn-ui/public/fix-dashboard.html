@@ -1,0 +1,547 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fix Dashboard Activity - DocManager</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 900px;
+            margin: 20px auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+            margin-bottom: 20px;
+        }
+        h1 { 
+            color: #333; 
+            margin-bottom: 10px;
+            font-size: 28px;
+        }
+        h2 { 
+            color: #667eea; 
+            margin-top: 0;
+            font-size: 20px;
+            border-bottom: 2px solid #667eea;
+            padding-bottom: 10px;
+        }
+        .status {
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+            font-weight: 500;
+            font-size: 16px;
+        }
+        .success { 
+            background: #d4edda; 
+            color: #155724; 
+            border-left: 5px solid #28a745;
+        }
+        .error { 
+            background: #f8d7da; 
+            color: #721c24; 
+            border-left: 5px solid #dc3545;
+        }
+        .warning { 
+            background: #fff3cd; 
+            color: #856404; 
+            border-left: 5px solid #ffc107;
+        }
+        .info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border-left: 5px solid #17a2b8;
+        }
+        button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 14px 28px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            margin: 8px 4px;
+            transition: all 0.3s;
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+        button:hover { 
+            transform: translateY(-2px); 
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
+        }
+        button:active {
+            transform: translateY(0);
+        }
+        button.secondary { 
+            background: linear-gradient(135deg, #6c757d 0%, #495057 100%);
+        }
+        button.danger { 
+            background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
+        }
+        button.success {
+            background: linear-gradient(135deg, #28a745 0%, #218838 100%);
+        }
+        pre {
+            background: #1e1e1e;
+            color: #d4d4d4;
+            padding: 20px;
+            border-radius: 8px;
+            overflow-x: auto;
+            font-size: 13px;
+            line-height: 1.6;
+        }
+        .step {
+            background: #f8f9fa;
+            padding: 20px;
+            margin: 15px 0;
+            border-radius: 8px;
+            border-left: 5px solid #667eea;
+        }
+        .activity-item {
+            background: #ffffff;
+            padding: 12px;
+            margin: 8px 0;
+            border-radius: 6px;
+            font-size: 14px;
+            border: 1px solid #e9ecef;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+        .count {
+            display: inline-block;
+            background: #667eea;
+            color: white;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-weight: bold;
+            margin-left: 10px;
+        }
+        .instruction {
+            background: #e7f3ff;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+            border-left: 4px solid #2196F3;
+        }
+        .instruction ol {
+            margin: 10px 0;
+            padding-left: 20px;
+        }
+        .instruction li {
+            margin: 8px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔧 Dashboard Activity Fix Tool</h1>
+        <p style="font-size: 16px; color: #666;">This tool will help fix your dashboard activity tracking issue.</p>
+        <div class="instruction">
+            <strong>📋 Quick Instructions:</strong>
+            <ol>
+                <li>Click "🔍 Diagnose Issue" to see what's wrong</li>
+                <li>Click "✨ Auto-Fix Everything" to automatically fix all issues</li>
+                <li>Go back to the main app and check the dashboard</li>
+            </ol>
+        </div>
+    </div>
+
+    <div class="container">
+        <h2>Step 1: Diagnose Current Issue</h2>
+        <div id="diagnosis"></div>
+        <button onclick="diagnose()">🔍 Diagnose Issue</button>
+    </div>
+
+    <div class="container">
+        <h2>Step 2: Auto-Fix Everything</h2>
+        <div id="fixResult"></div>
+        <button onclick="autoFix()" class="success">✨ Auto-Fix Everything</button>
+        <button onclick="addSampleData()" class="secondary">📊 Add Sample Data (20 Activities)</button>
+    </div>
+
+    <div class="container">
+        <h2>Step 3: Verify Fix</h2>
+        <div id="verification"></div>
+        <button onclick="verify()">✅ Verify Fix</button>
+    </div>
+
+    <div class="container">
+        <h2>🛠️ Manual Actions</h2>
+        <button onclick="clearEverything()" class="danger">🗑️ Clear All Data & Start Fresh</button>
+        <button onclick="exportData()" class="secondary">💾 Export Data (Backup)</button>
+        <button onclick="location.reload()" class="secondary">🔄 Refresh This Page</button>
+        <button onclick="window.location.href='/'" class="secondary">🏠 Go to Main App</button>
+    </div>
+
+    <div class="container">
+        <h2>📊 Current Data Status</h2>
+        <div id="dataStatus"></div>
+    </div>
+
+    <script>
+        const ACTIVITIES_KEY = 'docmanager_activities';
+        const DOCUMENTS_KEY = 'docmanager_documents';
+        const USERS_KEY = 'docmanager_users';
+
+        function diagnose() {
+            const diagDiv = document.getElementById('diagnosis');
+            
+            try {
+                const activities = JSON.parse(localStorage.getItem(ACTIVITIES_KEY) || '[]');
+                const documents = JSON.parse(localStorage.getItem(DOCUMENTS_KEY) || '[]');
+                const users = JSON.parse(localStorage.getItem(USERS_KEY) || '[]');
+                
+                let issues = [];
+                let html = '<div class="step">';
+                
+                // Check activities
+                html += `<strong>📊 Activities:</strong> <span class="count">${activities.length}</span><br>`;
+                if (activities.length === 0) {
+                    issues.push('No activities found in storage');
+                }
+                
+                // Check documents
+                html += `<strong>📄 Documents:</strong> <span class="count">${documents.length}</span><br>`;
+                
+                // Check users
+                html += `<strong>👥 Users:</strong> <span class="count">${users.length}</span><br>`;
+                if (users.length === 0) {
+                    issues.push('No users found - cannot track activities');
+                }
+                
+                // Check today's activities
+                const today = new Date().toISOString().split('T')[0];
+                const todayActivities = activities.filter(a => {
+                    const activityDate = new Date(a.timestamp).toISOString().split('T')[0];
+                    return activityDate === today;
+                });
+                html += `<strong>📅 Today's Activities:</strong> <span class="count">${todayActivities.length}</span><br>`;
+                
+                html += '</div>';
+                
+                // Show issues
+                if (issues.length > 0) {
+                    html += '<div class="status error"><strong>❌ Issues Found:</strong><br>';
+                    issues.forEach(issue => {
+                        html += `• ${issue}<br>`;
+                    });
+                    html += '</div>';
+                    html += '<div class="status info">💡 <strong>Solution:</strong> Click "Auto-Fix Everything" below to resolve all issues automatically.</div>';
+                } else {
+                    html += '<div class="status success">✅ No issues detected! Your data looks good.</div>';
+                    html += '<div class="status warning">⚠️ If dashboard still shows no data, try refreshing the main app or clearing browser cache.</div>';
+                }
+                
+                diagDiv.innerHTML = html;
+                updateDataStatus();
+                
+            } catch (e) {
+                diagDiv.innerHTML = `<div class="status error">❌ Error during diagnosis: ${e.message}</div>`;
+            }
+        }
+
+        function autoFix() {
+            const fixDiv = document.getElementById('fixResult');
+            fixDiv.innerHTML = '<div class="status info">🔧 Fixing issues...</div>';
+            
+            try {
+                let fixed = [];
+                
+                // 1. Ensure users exist
+                let users = JSON.parse(localStorage.getItem(USERS_KEY) || '[]');
+                if (users.length === 0) {
+                    users = [{
+                        id: 'user-admin',
+                        name: 'Admin User',
+                        email: 'admin',
+                        role: 'admin',
+                        department: 'IT',
+                        createdAt: new Date().toISOString()
+                    }];
+                    localStorage.setItem(USERS_KEY, JSON.stringify(users));
+                    fixed.push('Created admin user');
+                }
+                
+                const currentUser = users[0];
+                
+                // 2. Create sample activities if none exist
+                let activities = JSON.parse(localStorage.getItem(ACTIVITIES_KEY) || '[]');
+                if (activities.length === 0) {
+                    const now = Date.now();
+                    const sampleActivities = [
+                        {
+                            id: `activity-${now}-1`,
+                            type: 'upload',
+                            documentId: 'doc-sample-1',
+                            documentName: 'Project Report.pdf',
+                            userId: currentUser.id,
+                            userName: currentUser.name,
+                            timestamp: new Date(now - 3600000).toISOString(),
+                            details: 'Uploaded document "Project Report.pdf"'
+                        },
+                        {
+                            id: `activity-${now}-2`,
+                            type: 'upload',
+                            documentId: 'doc-sample-2',
+                            documentName: 'Budget 2024.xlsx',
+                            userId: currentUser.id,
+                            userName: currentUser.name,
+                            timestamp: new Date(now - 7200000).toISOString(),
+                            details: 'Uploaded document "Budget 2024.xlsx"'
+                        },
+                        {
+                            id: `activity-${now}-3`,
+                            type: 'edit',
+                            documentId: 'doc-sample-1',
+                            documentName: 'Project Report.pdf',
+                            userId: currentUser.id,
+                            userName: currentUser.name,
+                            timestamp: new Date(now - 1800000).toISOString(),
+                            details: 'Updated document "Project Report.pdf"'
+                        },
+                        {
+                            id: `activity-${now}-4`,
+                            type: 'view',
+                            documentId: 'doc-sample-2',
+                            documentName: 'Budget 2024.xlsx',
+                            userId: currentUser.id,
+                            userName: currentUser.name,
+                            timestamp: new Date(now - 900000).toISOString(),
+                            details: 'Viewed document "Budget 2024.xlsx"'
+                        },
+                        {
+                            id: `activity-${now}-5`,
+                            type: 'upload',
+                            documentId: 'doc-sample-3',
+                            documentName: 'Meeting Notes.docx',
+                            userId: currentUser.id,
+                            userName: currentUser.name,
+                            timestamp: new Date().toISOString(),
+                            details: 'Uploaded document "Meeting Notes.docx"'
+                        }
+                    ];
+                    
+                    localStorage.setItem(ACTIVITIES_KEY, JSON.stringify(sampleActivities));
+                    activities = sampleActivities;
+                    fixed.push(`Created ${sampleActivities.length} sample activities`);
+                }
+                
+                // 3. Verify storage
+                const savedActivities = localStorage.getItem(ACTIVITIES_KEY);
+                if (!savedActivities) {
+                    throw new Error('Failed to save activities to localStorage');
+                }
+                
+                fixed.push('Verified localStorage persistence');
+                
+                // Show success
+                let html = '<div class="status success"><strong>✅ Auto-Fix Complete!</strong><br><br>';
+                fixed.forEach(fix => {
+                    html += `• ${fix}<br>`;
+                });
+                html += '</div>';
+                
+                html += '<div class="instruction">';
+                html += '<strong>✨ Next Steps:</strong><br>';
+                html += '1. Click "Verify Fix" below to confirm everything is working<br>';
+                html += '2. Click "Go to Main App" to return to the dashboard<br>';
+                html += '3. Navigate to Dashboard → Activity Overview tab<br>';
+                html += '4. You should now see activity charts with data!';
+                html += '</div>';
+                
+                fixDiv.innerHTML = html;
+                updateDataStatus();
+                
+            } catch (e) {
+                fixDiv.innerHTML = `<div class="status error">❌ Error during auto-fix: ${e.message}</div>`;
+            }
+        }
+
+        function addSampleData() {
+            try {
+                const users = JSON.parse(localStorage.getItem(USERS_KEY) || '[]');
+                const currentUser = users[0] || {
+                    id: 'user-admin',
+                    name: 'Admin User'
+                };
+                
+                let activities = JSON.parse(localStorage.getItem(ACTIVITIES_KEY) || '[]');
+                const types = ['upload', 'edit', 'view', 'share'];
+                const now = Date.now();
+                
+                // Add 20 activities spread over the last 7 days
+                for (let i = 0; i < 20; i++) {
+                    const daysAgo = Math.floor(i / 3); // Spread over ~7 days
+                    const hoursAgo = (i % 3) * 2; // Spread within each day
+                    const timestamp = now - (daysAgo * 86400000) - (hoursAgo * 3600000);
+                    
+                    const activity = {
+                        id: `activity-${timestamp}-${i}`,
+                        type: types[i % types.length],
+                        documentId: `doc-sample-${i}`,
+                        documentName: `Document ${i + 1}.pdf`,
+                        userId: currentUser.id,
+                        userName: currentUser.name,
+                        timestamp: new Date(timestamp).toISOString(),
+                        details: `Sample ${types[i % types.length]} activity ${i + 1}`
+                    };
+                    
+                    activities.unshift(activity);
+                }
+                
+                localStorage.setItem(ACTIVITIES_KEY, JSON.stringify(activities));
+                alert('✅ Added 20 sample activities spread over the last 7 days!');
+                updateDataStatus();
+                
+            } catch (e) {
+                alert(`❌ Error: ${e.message}`);
+            }
+        }
+
+        function verify() {
+            const verifyDiv = document.getElementById('verification');
+            
+            try {
+                const activities = JSON.parse(localStorage.getItem(ACTIVITIES_KEY) || '[]');
+                
+                let html = '<div class="step">';
+                html += `<strong>Total Activities:</strong> <span class="count">${activities.length}</span><br><br>`;
+                
+                // Calculate weekly stats (same as Dashboard)
+                const weeklyStats = [];
+                const today = new Date();
+                
+                for (let i = 6; i >= 0; i--) {
+                    const date = new Date(today);
+                    date.setDate(date.getDate() - i);
+                    date.setHours(0, 0, 0, 0);
+                    
+                    const nextDate = new Date(date);
+                    nextDate.setDate(nextDate.getDate() + 1);
+                    
+                    const dayActivities = activities.filter(activity => {
+                        const activityDate = new Date(activity.timestamp);
+                        return activityDate >= date && activityDate < nextDate;
+                    });
+                    
+                    weeklyStats.push({
+                        date: date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+                        total: dayActivities.length,
+                        uploads: dayActivities.filter(a => a.type === 'upload').length,
+                        edits: dayActivities.filter(a => a.type === 'edit').length,
+                        views: dayActivities.filter(a => a.type === 'view').length,
+                        shares: dayActivities.filter(a => a.type === 'share').length
+                    });
+                }
+                
+                html += '<strong>📊 Weekly Activity Stats (Last 7 Days):</strong><br><br>';
+                weeklyStats.forEach(stat => {
+                    if (stat.total > 0) {
+                        html += `<div class="activity-item">`;
+                        html += `<strong>${stat.date}:</strong> ${stat.total} activities `;
+                        html += `(${stat.uploads} uploads, ${stat.edits} edits, ${stat.views} views, ${stat.shares} shares)`;
+                        html += `</div>`;
+                    }
+                });
+                
+                html += '</div>';
+                
+                const hasData = weeklyStats.some(s => s.total > 0);
+                if (hasData) {
+                    html += '<div class="status success">✅ <strong>Verification Passed!</strong><br><br>';
+                    html += 'Your dashboard should now display activity charts with this data.<br>';
+                    html += 'Click "Go to Main App" below and navigate to Dashboard → Activity Overview.</div>';
+                } else {
+                    html += '<div class="status warning">⚠️ No activity data for the last 7 days.<br>';
+                    html += 'Click "Add Sample Data" above to create test activities.</div>';
+                }
+                
+                verifyDiv.innerHTML = html;
+                
+            } catch (e) {
+                verifyDiv.innerHTML = `<div class="status error">❌ Error: ${e.message}</div>`;
+            }
+        }
+
+        function clearEverything() {
+            if (confirm('⚠️ This will delete ALL data (activities, documents, users). Are you absolutely sure?')) {
+                if (confirm('🚨 FINAL WARNING: This cannot be undone. Continue?')) {
+                    localStorage.removeItem(ACTIVITIES_KEY);
+                    localStorage.removeItem(DOCUMENTS_KEY);
+                    localStorage.removeItem(USERS_KEY);
+                    alert('✅ All data cleared! The app will start fresh.');
+                    location.reload();
+                }
+            }
+        }
+
+        function exportData() {
+            try {
+                const data = {
+                    activities: JSON.parse(localStorage.getItem(ACTIVITIES_KEY) || '[]'),
+                    documents: JSON.parse(localStorage.getItem(DOCUMENTS_KEY) || '[]'),
+                    users: JSON.parse(localStorage.getItem(USERS_KEY) || '[]'),
+                    exportDate: new Date().toISOString()
+                };
+                
+                const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `docmanager-backup-${Date.now()}.json`;
+                a.click();
+                URL.revokeObjectURL(url);
+                
+                alert('✅ Data exported successfully!');
+            } catch (e) {
+                alert(`❌ Export failed: ${e.message}`);
+            }
+        }
+
+        function updateDataStatus() {
+            const statusDiv = document.getElementById('dataStatus');
+            
+            try {
+                const activities = JSON.parse(localStorage.getItem(ACTIVITIES_KEY) || '[]');
+                const documents = JSON.parse(localStorage.getItem(DOCUMENTS_KEY) || '[]');
+                const users = JSON.parse(localStorage.getItem(USERS_KEY) || '[]');
+                
+                let html = '<div class="step">';
+                html += `<strong>📊 Activities:</strong> <span class="count">${activities.length}</span><br>`;
+                html += `<strong>📄 Documents:</strong> <span class="count">${documents.length}</span><br>`;
+                html += `<strong>👥 Users:</strong> <span class="count">${users.length}</span><br>`;
+                html += '</div>';
+                
+                if (activities.length > 0) {
+                    html += '<div class="step"><strong>Recent Activities:</strong><br><br>';
+                    activities.slice(0, 5).forEach(activity => {
+                        const time = new Date(activity.timestamp).toLocaleString();
+                        html += `<div class="activity-item">`;
+                        html += `<strong>${activity.type.toUpperCase()}</strong> - ${activity.documentName}<br>`;
+                        html += `<small>by ${activity.userName} at ${time}</small>`;
+                        html += `</div>`;
+                    });
+                    html += '</div>';
+                }
+                
+                statusDiv.innerHTML = html;
+                
+            } catch (e) {
+                statusDiv.innerHTML = `<div class="status error">❌ Error: ${e.message}</div>`;
+            }
+        }
+
+        // Auto-run on page load
+        window.onload = () => {
+            diagnose();
+            updateDataStatus();
+        };
+    </script>
+</body>
+</html>

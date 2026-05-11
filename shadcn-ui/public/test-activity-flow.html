@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Activity Flow Test - DocManager</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 1000px;
+            margin: 20px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        h1 { color: #333; margin-bottom: 20px; }
+        h2 { color: #667eea; margin-top: 0; }
+        .status {
+            padding: 12px;
+            border-radius: 6px;
+            margin: 10px 0;
+            font-weight: 500;
+        }
+        .success { background: #d4edda; color: #155724; border-left: 4px solid #28a745; }
+        .error { background: #f8d7da; color: #721c24; border-left: 4px solid #dc3545; }
+        .warning { background: #fff3cd; color: #856404; border-left: 4px solid #ffc107; }
+        button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            margin: 8px 4px;
+            transition: all 0.2s;
+        }
+        button:hover { transform: translateY(-2px); box-shadow: 0 6px 16px rgba(102, 126, 234, 0.6); }
+        button.secondary { background: #6c757d; }
+        button.danger { background: linear-gradient(135deg, #dc3545 0%, #c82333 100%); }
+        pre {
+            background: #1e1e1e;
+            color: #d4d4d4;
+            padding: 15px;
+            border-radius: 6px;
+            overflow-x: auto;
+            font-size: 12px;
+        }
+        .step {
+            background: #f8f9fa;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 6px;
+            border-left: 4px solid #667eea;
+        }
+        .activity-item {
+            background: #f8f9fa;
+            padding: 10px;
+            margin: 5px 0;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 Activity Flow Test</h1>
+        <p>This tool tests the complete activity tracking flow from upload to dashboard display.</p>
+    </div>
+
+    <div class="container">
+        <h2>Step 1: Check Current State</h2>
+        <div id="currentState"></div>
+        <button onclick="checkCurrentState()">🔍 Check Current State</button>
+    </div>
+
+    <div class="container">
+        <h2>Step 2: Simulate Document Upload</h2>
+        <p>This simulates what happens when you upload a document.</p>
+        <button onclick="simulateUpload()">📤 Simulate Upload</button>
+        <div id="uploadResult"></div>
+    </div>
+
+    <div class="container">
+        <h2>Step 3: Verify Activity Storage</h2>
+        <div id="activityStorage"></div>
+        <button onclick="verifyStorage()">✅ Verify Storage</button>
+    </div>
+
+    <div class="container">
+        <h2>Step 4: Test Dashboard Data</h2>
+        <div id="dashboardData"></div>
+        <button onclick="testDashboard()">📊 Test Dashboard Data</button>
+    </div>
+
+    <div class="container">
+        <h2>🛠️ Quick Actions</h2>
+        <button onclick="addTestActivities()">➕ Add 5 Test Activities</button>
+        <button onclick="clearActivities()" class="danger">🗑️ Clear All Activities</button>
+        <button onclick="location.reload()" class="secondary">🔄 Refresh Page</button>
+        <button onclick="window.location.href='/'" class="secondary">🏠 Go to App</button>
+    </div>
+
+    <div class="container">
+        <h2>📋 All Activities</h2>
+        <div id="allActivities"></div>
+    </div>
+
+    <script>
+        const ACTIVITIES_KEY = 'docmanager_activities';
+        const DOCUMENTS_KEY = 'docmanager_documents';
+        const USERS_KEY = 'docmanager_users';
+
+        function checkCurrentState() {
+            const stateDiv = document.getElementById('currentState');
+            
+            const activities = JSON.parse(localStorage.getItem(ACTIVITIES_KEY) || '[]');
+            const documents = JSON.parse(localStorage.getItem(DOCUMENTS_KEY) || '[]');
+            const users = JSON.parse(localStorage.getItem(USERS_KEY) || '[]');
+            
+            let html = '<div class="step">';
+            html += `<strong>📊 Activities:</strong> ${activities.length} found<br>`;
+            html += `<strong>📄 Documents:</strong> ${documents.length} found<br>`;
+            html += `<strong>👥 Users:</strong> ${users.length} found<br>`;
+            html += '</div>';
+            
+            if (activities.length === 0) {
+                html += '<div class="status warning">⚠️ No activities found. This is why your dashboard is empty!</div>';
+            } else {
+                html += '<div class="status success">✅ Activities exist in storage</div>';
+            }
+            
+            stateDiv.innerHTML = html;
+            displayAllActivities();
+        }
+
+        function simulateUpload() {
+            const resultDiv = document.getElementById('uploadResult');
+            
+            try {
+                // Get current user
+                const users = JSON.parse(localStorage.getItem(USERS_KEY) || '[]');
+                const currentUser = users.find(u => u.email === 'admin') || users[0];
+                
+                if (!currentUser) {
+                    resultDiv.innerHTML = '<div class="status error">❌ No user found. Please login first.</div>';
+                    return;
+                }
+                
+                // Create a test document
+                const documents = JSON.parse(localStorage.getItem(DOCUMENTS_KEY) || '[]');
+                const newDoc = {
+                    id: `doc-${Date.now()}`,
+                    name: `Test Document ${Date.now()}.pdf`,
+                    description: 'Test document for activity tracking',
+                    type: 'pdf',
+                    size: 1024000,
+                    uploadedBy: currentUser.id,
+                    folder: 'root',
+                    tags: [],
+                    status: 'completed',
+                    url: '#',
+                    uploadDate: new Date().toISOString(),
+                    lastModified: new Date().toISOString(),
+                    starred: false,
+                    comments: [],
+                    pages: []
+                };
+                
+                documents.push(newDoc);
+                localStorage.setItem(DOCUMENTS_KEY, JSON.stringify(documents));
+                
+                // Create activity
+                const activities = JSON.parse(localStorage.getItem(ACTIVITIES_KEY) || '[]');
+                const newActivity = {
+                    id: `activity-${Date.now()}`,
+                    type: 'upload',
+                    documentId: newDoc.id,
+                    documentName: newDoc.name,
+                    userId: currentUser.id,
+                    userName: currentUser.name,
+                    timestamp: new Date().toISOString(),
+                    details: `Uploaded document "${newDoc.name}"`
+                };
+                
+                activities.unshift(newActivity);
+                localStorage.setItem(ACTIVITIES_KEY, JSON.stringify(activities));
+                
+                resultDiv.innerHTML = `
+                    <div class="status success">✅ Upload simulated successfully!</div>
+                    <div class="step">
+                        <strong>Document Created:</strong><br>
+                        Name: ${newDoc.name}<br>
+                        ID: ${newDoc.id}<br><br>
+                        <strong>Activity Logged:</strong><br>
+                        Type: ${newActivity.type}<br>
+                        User: ${newActivity.userName}<br>
+                        Time: ${new Date(newActivity.timestamp).toLocaleString()}
+                    </div>
+                `;
+                
+                displayAllActivities();
+            } catch (e) {
+                resultDiv.innerHTML = `<div class="status error">❌ Error: ${e.message}</div>`;
+            }
+        }
+
+        function verifyStorage() {
+            const storageDiv = document.getElementById('activityStorage');
+            
+            const activities = JSON.parse(localStorage.getItem(ACTIVITIES_KEY) || '[]');
+            
+            let html = '<div class="step">';
+            html += `<strong>Total Activities:</strong> ${activities.length}<br><br>`;
+            
+            if (activities.length > 0) {
+                const today = new Date().toISOString().split('T')[0];
+                const todayActivities = activities.filter(a => {
+                    const activityDate = new Date(a.timestamp).toISOString().split('T')[0];
+                    return activityDate === today;
+                });
+                
+                html += `<strong>Today's Activities:</strong> ${todayActivities.length}<br>`;
+                html += `<strong>Upload Activities:</strong> ${activities.filter(a => a.type === 'upload').length}<br>`;
+                html += `<strong>Edit Activities:</strong> ${activities.filter(a => a.type === 'edit').length}<br>`;
+                html += `<strong>View Activities:</strong> ${activities.filter(a => a.type === 'view').length}<br>`;
+                html += `<strong>Share Activities:</strong> ${activities.filter(a => a.type === 'share').length}<br>`;
+                html += '</div>';
+                
+                html += '<div class="status success">✅ Activity storage is working correctly</div>';
+                html += '<pre>' + JSON.stringify(activities.slice(0, 3), null, 2) + '</pre>';
+            } else {
+                html += '</div>';
+                html += '<div class="status warning">⚠️ No activities in storage</div>';
+            }
+            
+            storageDiv.innerHTML = html;
+        }
+
+        function testDashboard() {
+            const dashboardDiv = document.getElementById('dashboardData');
+            
+            const activities = JSON.parse(localStorage.getItem(ACTIVITIES_KEY) || '[]');
+            
+            // Calculate weekly stats (same logic as Dashboard)
+            const weeklyStats = [];
+            const today = new Date();
+            
+            for (let i = 6; i >= 0; i--) {
+                const date = new Date(today);
+                date.setDate(date.getDate() - i);
+                date.setHours(0, 0, 0, 0);
+                
+                const nextDate = new Date(date);
+                nextDate.setDate(nextDate.getDate() + 1);
+                
+                const dayActivities = activities.filter(activity => {
+                    const activityDate = new Date(activity.timestamp);
+                    return activityDate >= date && activityDate < nextDate;
+                });
+                
+                weeklyStats.push({
+                    date: date.toISOString().split('T')[0],
+                    uploads: dayActivities.filter(a => a.type === 'upload').length,
+                    edits: dayActivities.filter(a => a.type === 'edit').length,
+                    views: dayActivities.filter(a => a.type === 'view').length,
+                    shares: dayActivities.filter(a => a.type === 'share').length,
+                    total: dayActivities.length
+                });
+            }
+            
+            let html = '<div class="step"><strong>Weekly Stats (Last 7 Days):</strong><br><br>';
+            weeklyStats.forEach(stat => {
+                html += `${stat.date}: ${stat.total} activities (${stat.uploads} uploads, ${stat.edits} edits, ${stat.views} views, ${stat.shares} shares)<br>`;
+            });
+            html += '</div>';
+            
+            const hasData = weeklyStats.some(s => s.total > 0);
+            if (hasData) {
+                html += '<div class="status success">✅ Dashboard should display charts with this data</div>';
+            } else {
+                html += '<div class="status warning">⚠️ No activity data for the last 7 days. Dashboard will show "No data" message.</div>';
+            }
+            
+            dashboardDiv.innerHTML = html;
+        }
+
+        function addTestActivities() {
+            const users = JSON.parse(localStorage.getItem(USERS_KEY) || '[]');
+            const currentUser = users.find(u => u.email === 'admin') || users[0];
+            
+            if (!currentUser) {
+                alert('Please login first');
+                return;
+            }
+            
+            const activities = JSON.parse(localStorage.getItem(ACTIVITIES_KEY) || '[]');
+            const types = ['upload', 'edit', 'view', 'share', 'upload'];
+            
+            for (let i = 0; i < 5; i++) {
+                const activity = {
+                    id: `activity-${Date.now()}-${i}`,
+                    type: types[i],
+                    documentId: `doc-test-${i}`,
+                    documentName: `Test Document ${i + 1}.pdf`,
+                    userId: currentUser.id,
+                    userName: currentUser.name,
+                    timestamp: new Date(Date.now() - i * 3600000).toISOString(), // Spread over last 5 hours
+                    details: `Test ${types[i]} activity ${i + 1}`
+                };
+                activities.unshift(activity);
+            }
+            
+            localStorage.setItem(ACTIVITIES_KEY, JSON.stringify(activities));
+            alert('✅ Added 5 test activities!');
+            checkCurrentState();
+        }
+
+        function clearActivities() {
+            if (confirm('Are you sure you want to clear all activities?')) {
+                localStorage.setItem(ACTIVITIES_KEY, '[]');
+                alert('✅ All activities cleared!');
+                checkCurrentState();
+            }
+        }
+
+        function displayAllActivities() {
+            const allDiv = document.getElementById('allActivities');
+            const activities = JSON.parse(localStorage.getItem(ACTIVITIES_KEY) || '[]');
+            
+            if (activities.length === 0) {
+                allDiv.innerHTML = '<div class="status warning">No activities to display</div>';
+                return;
+            }
+            
+            let html = `<p><strong>Total: ${activities.length} activities</strong></p>`;
+            activities.slice(0, 10).forEach(activity => {
+                const time = new Date(activity.timestamp).toLocaleString();
+                html += `
+                    <div class="activity-item">
+                        <strong>${activity.type.toUpperCase()}</strong> - ${activity.documentName}<br>
+                        <small>by ${activity.userName} at ${time}</small>
+                    </div>
+                `;
+            });
+            
+            if (activities.length > 10) {
+                html += `<p class="text-sm text-muted-foreground">...and ${activities.length - 10} more</p>`;
+            }
+            
+            allDiv.innerHTML = html;
+        }
+
+        // Auto-run on page load
+        window.onload = checkCurrentState;
+    </script>
+</body>
+</html>

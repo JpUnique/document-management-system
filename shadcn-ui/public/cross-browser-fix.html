@@ -1,0 +1,443 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cross-Browser Login Fix - DocManager</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        .container {
+            background: white;
+            border-radius: 12px;
+            padding: 40px;
+            max-width: 600px;
+            width: 100%;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 28px;
+        }
+        .subtitle {
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 14px;
+        }
+        .browser-info {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            border-left: 4px solid #667eea;
+        }
+        .browser-info strong {
+            color: #667eea;
+        }
+        .section {
+            margin: 25px 0;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 8px;
+        }
+        .section h2 {
+            color: #667eea;
+            margin-bottom: 15px;
+            font-size: 18px;
+        }
+        .status {
+            padding: 12px;
+            border-radius: 6px;
+            margin: 10px 0;
+            font-weight: 500;
+        }
+        .status.success {
+            background: #d4edda;
+            color: #155724;
+            border-left: 4px solid #28a745;
+        }
+        .status.error {
+            background: #f8d7da;
+            color: #721c24;
+            border-left: 4px solid #dc3545;
+        }
+        .status.warning {
+            background: #fff3cd;
+            color: #856404;
+            border-left: 4px solid #ffc107;
+        }
+        button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            margin: 8px 4px;
+            transition: transform 0.2s, box-shadow 0.2s;
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(102, 126, 234, 0.6);
+        }
+        button:active {
+            transform: translateY(0);
+        }
+        button.secondary {
+            background: #6c757d;
+            box-shadow: 0 4px 12px rgba(108, 117, 125, 0.4);
+        }
+        button.danger {
+            background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
+            box-shadow: 0 4px 12px rgba(220, 53, 69, 0.4);
+        }
+        button.success {
+            background: linear-gradient(135deg, #28a745 0%, #218838 100%);
+            box-shadow: 0 4px 12px rgba(40, 167, 69, 0.4);
+        }
+        .step {
+            background: white;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 6px;
+            border-left: 4px solid #667eea;
+        }
+        .step-number {
+            display: inline-block;
+            background: #667eea;
+            color: white;
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            text-align: center;
+            line-height: 28px;
+            font-weight: bold;
+            margin-right: 10px;
+        }
+        pre {
+            background: #1e1e1e;
+            color: #d4d4d4;
+            padding: 15px;
+            border-radius: 6px;
+            overflow-x: auto;
+            font-size: 12px;
+            margin: 10px 0;
+        }
+        .actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 20px;
+        }
+        .info-box {
+            background: #e7f3ff;
+            border-left: 4px solid #2196F3;
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 6px;
+        }
+        .info-box strong {
+            color: #2196F3;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔧 Cross-Browser Login Fix</h1>
+        <p class="subtitle">Fix login issues between Chrome and Edge browsers</p>
+
+        <div class="browser-info">
+            <strong>Current Browser:</strong> <span id="currentBrowser"></span><br>
+            <strong>Platform:</strong> <span id="platform"></span>
+        </div>
+
+        <div class="section">
+            <h2>🔍 Diagnosis</h2>
+            <div id="diagnosisResult"></div>
+        </div>
+
+        <div class="section">
+            <h2>📊 Storage Keys Status</h2>
+            <div id="storageKeysStatus"></div>
+        </div>
+
+        <div class="info-box">
+            <strong>💡 Why This Happens:</strong><br>
+            Chrome and Edge use separate localStorage databases. When you create an account or login on one browser, the data is NOT automatically synced to the other browser. Each browser maintains its own isolated storage.
+        </div>
+
+        <div class="section">
+            <h2>✅ Solution Steps</h2>
+            
+            <div class="step">
+                <span class="step-number">1</span>
+                <strong>Check Current Status</strong> - Click "Run Diagnosis" to see what's stored in this browser
+            </div>
+            
+            <div class="step">
+                <span class="step-number">2</span>
+                <strong>Initialize Admin</strong> - Click "Fix: Initialize Admin User" to create the admin account in THIS browser
+            </div>
+            
+            <div class="step">
+                <span class="step-number">3</span>
+                <strong>Test Login</strong> - Click "Test Login" to verify credentials work
+            </div>
+            
+            <div class="step">
+                <span class="step-number">4</span>
+                <strong>Go to App</strong> - Click "Open DocManager" to login with: admin / PdAdmin
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>🛠️ Quick Actions</h2>
+            <div class="actions">
+                <button onclick="runDiagnosis()" class="success">🔍 Run Diagnosis</button>
+                <button onclick="fixAdminUser()" class="success">✅ Fix: Initialize Admin User</button>
+                <button onclick="testLogin()">🧪 Test Login</button>
+                <button onclick="syncFromOtherBrowser()" class="secondary">🔄 Sync from Other Browser</button>
+                <button onclick="clearAndReset()" class="danger">🗑️ Clear & Reset</button>
+                <button onclick="window.location.href='/'" class="secondary">🏠 Open DocManager</button>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>📋 Detailed Storage Data</h2>
+            <pre id="storageData"></pre>
+        </div>
+
+        <div class="section">
+            <h2>💾 Export/Import Data</h2>
+            <p style="margin-bottom: 15px; color: #666;">Use these tools to transfer data between browsers:</p>
+            <div class="actions">
+                <button onclick="exportData()" class="secondary">📤 Export Data</button>
+                <button onclick="document.getElementById('importFile').click()" class="secondary">📥 Import Data</button>
+            </div>
+            <input type="file" id="importFile" accept=".json" style="display: none;" onchange="importData(event)">
+        </div>
+    </div>
+
+    <script>
+        const STORAGE_KEYS = {
+            users: 'docmanager_users',
+            currentUser: 'docmanager_current_user',
+            documents: 'docmanager_documents',
+            folders: 'docmanager_folders',
+            activities: 'docmanager_activities'
+        };
+
+        // Detect browser
+        function getBrowserName() {
+            const ua = navigator.userAgent;
+            if (ua.indexOf('Edg') > -1) return 'Microsoft Edge';
+            if (ua.indexOf('Chrome') > -1) return 'Google Chrome';
+            if (ua.indexOf('Firefox') > -1) return 'Mozilla Firefox';
+            if (ua.indexOf('Safari') > -1) return 'Safari';
+            return 'Unknown Browser';
+        }
+
+        // Initialize page
+        document.getElementById('currentBrowser').textContent = getBrowserName();
+        document.getElementById('platform').textContent = navigator.platform;
+
+        // Run diagnosis
+        function runDiagnosis() {
+            const diagnosisDiv = document.getElementById('diagnosisResult');
+            const keysDiv = document.getElementById('storageKeysStatus');
+            const dataDiv = document.getElementById('storageData');
+            
+            let diagnosis = '';
+            let keysStatus = '';
+            let allData = {};
+
+            // Check each storage key
+            Object.entries(STORAGE_KEYS).forEach(([name, key]) => {
+                const data = localStorage.getItem(key);
+                allData[key] = data;
+                
+                if (data) {
+                    try {
+                        const parsed = JSON.parse(data);
+                        const count = Array.isArray(parsed) ? parsed.length : 1;
+                        keysStatus += `<div class="status success">✅ ${name}: Found (${count} items)</div>`;
+                    } catch (e) {
+                        keysStatus += `<div class="status warning">⚠️ ${name}: Found but invalid JSON</div>`;
+                    }
+                } else {
+                    keysStatus += `<div class="status error">❌ ${name}: Not found</div>`;
+                }
+            });
+
+            // Overall diagnosis
+            const users = localStorage.getItem(STORAGE_KEYS.users);
+            const currentUser = localStorage.getItem(STORAGE_KEYS.currentUser);
+
+            if (!users || JSON.parse(users).length === 0) {
+                diagnosis = '<div class="status error">❌ <strong>Problem Found:</strong> No users exist in this browser. Click "Fix: Initialize Admin User" to create the admin account.</div>';
+            } else if (!currentUser) {
+                diagnosis = '<div class="status warning">⚠️ <strong>Status:</strong> Users exist but no one is logged in. You can login with: admin / PdAdmin</div>';
+            } else {
+                const user = JSON.parse(currentUser);
+                diagnosis = `<div class="status success">✅ <strong>All Good!</strong> User "${user.email}" is logged in.</div>`;
+            }
+
+            diagnosisDiv.innerHTML = diagnosis;
+            keysDiv.innerHTML = keysStatus;
+            dataDiv.textContent = JSON.stringify(allData, null, 2);
+        }
+
+        // Fix admin user
+        function fixAdminUser() {
+            try {
+                const adminUser = {
+                    id: 'admin-1',
+                    name: 'Admin',
+                    email: 'admin',
+                    password: 'PdAdmin',
+                    role: 'admin',
+                    createdAt: new Date().toISOString()
+                };
+
+                // Get existing users or create new array
+                const existingUsers = localStorage.getItem(STORAGE_KEYS.users);
+                let users = existingUsers ? JSON.parse(existingUsers) : [];
+
+                // Remove any existing admin
+                users = users.filter(u => u.email !== 'admin');
+
+                // Add admin at the beginning
+                users.unshift(adminUser);
+
+                // Save to localStorage
+                localStorage.setItem(STORAGE_KEYS.users, JSON.stringify(users));
+
+                alert('✅ Success!\n\nAdmin user has been initialized in ' + getBrowserName() + '.\n\nYou can now login with:\nUsername: admin\nPassword: PdAdmin');
+                
+                runDiagnosis();
+            } catch (e) {
+                alert('❌ Error: ' + e.message);
+            }
+        }
+
+        // Test login
+        function testLogin() {
+            try {
+                const users = JSON.parse(localStorage.getItem(STORAGE_KEYS.users) || '[]');
+                const admin = users.find(u => u.email === 'admin');
+
+                if (!admin) {
+                    alert('❌ Admin user not found!\n\nClick "Fix: Initialize Admin User" first.');
+                    return;
+                }
+
+                if (admin.password === 'PdAdmin') {
+                    // Simulate login
+                    localStorage.setItem(STORAGE_KEYS.currentUser, JSON.stringify(admin));
+                    alert('✅ Login Test Successful!\n\nCredentials verified:\nUsername: admin\nPassword: PdAdmin\n\nYou can now click "Open DocManager" to access the app.');
+                    runDiagnosis();
+                } else {
+                    alert('❌ Password mismatch!\n\nExpected: PdAdmin\nFound: ' + admin.password);
+                }
+            } catch (e) {
+                alert('❌ Test failed: ' + e.message);
+            }
+        }
+
+        // Sync from other browser
+        function syncFromOtherBrowser() {
+            const instructions = `
+📋 To sync data from another browser:
+
+1. Open this page in the OTHER browser (the one that works)
+2. Click "Export Data" button
+3. Save the JSON file
+4. Come back to THIS browser
+5. Click "Import Data" button
+6. Select the JSON file you saved
+
+This will copy all users, documents, and settings from the working browser to this one.
+            `.trim();
+            
+            alert(instructions);
+        }
+
+        // Export data
+        function exportData() {
+            try {
+                const data = {};
+                Object.entries(STORAGE_KEYS).forEach(([name, key]) => {
+                    const value = localStorage.getItem(key);
+                    if (value) {
+                        data[key] = value;
+                    }
+                });
+
+                const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `docmanager-${getBrowserName().replace(/\s+/g, '-')}-${new Date().toISOString().split('T')[0]}.json`;
+                a.click();
+                URL.revokeObjectURL(url);
+
+                alert('✅ Data exported successfully!\n\nThe file has been downloaded. You can import it in another browser.');
+            } catch (e) {
+                alert('❌ Export failed: ' + e.message);
+            }
+        }
+
+        // Import data
+        function importData(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const data = JSON.parse(e.target.result);
+                    
+                    // Import each key
+                    Object.entries(data).forEach(([key, value]) => {
+                        localStorage.setItem(key, value);
+                    });
+
+                    alert('✅ Data imported successfully!\n\nAll data has been restored. Refreshing page...');
+                    setTimeout(() => location.reload(), 1500);
+                } catch (err) {
+                    alert('❌ Import failed: ' + err.message);
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        // Clear and reset
+        function clearAndReset() {
+            if (confirm('⚠️ WARNING\n\nThis will delete ALL data in this browser including:\n- All users\n- All documents\n- All activities\n- Current login session\n\nAre you sure you want to continue?')) {
+                localStorage.clear();
+                alert('✅ All data cleared!\n\nYou can now click "Fix: Initialize Admin User" to start fresh.');
+                runDiagnosis();
+            }
+        }
+
+        // Run diagnosis on page load
+        window.onload = runDiagnosis;
+    </script>
+</body>
+</html>
